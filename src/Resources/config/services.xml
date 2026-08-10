@@ -4,6 +4,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <!-- Existing Controllers -->
         <service id="Topdata\TopdataErrorMonitorSW6\Controller\StorefrontExampleController" public="true">
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
@@ -14,6 +15,37 @@
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+        </service>
+
+        <!-- Services -->
+        <service id="Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService" public="true">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="Symfony\Component\Mailer\MailerInterface"/>
+        </service>
+
+        <!-- Event Subscribers -->
+        <service id="Topdata\TopdataErrorMonitorSW6\Subscriber\ExceptionSubscriber">
+            <argument type="service" id="Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Scheduled Tasks -->
+        <service id="Topdata\TopdataErrorMonitorSW6\ScheduledTask\SendDailySummaryTask">
+            <tag name="shopware.scheduled.task"/>
+        </service>
+
+        <service id="Topdata\TopdataErrorMonitorSW6\ScheduledTask\SendDailySummaryTaskHandler">
+            <argument type="service" id="scheduled_task.repository"/>
+            <argument type="service" id="Psr\Log\LoggerInterface" key="$exceptionLogger"/>
+            <argument type="service" id="Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService" key="$errorLoggerService"/>
+            <tag name="messenger.message_handler"/>
+        </service>
+
+        <!-- Console Commands -->
+        <service id="Topdata\TopdataErrorMonitorSW6\Command\TestErrorCommand">
+            <argument type="service" id="Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService"/>
+            <tag name="console.command"/>
         </service>
     </services>
 </container>

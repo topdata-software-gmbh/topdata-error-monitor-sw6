@@ -4,11 +4,57 @@
     <card>
         <title>Basic Configuration</title>
         <title lang="de-DE">Grundeinstellungen</title>
-        
-        <input-field>
-            <name>example</name>
-            <label>Example Configuration</label>
-            <label lang="de-DE">Beispiel Konfiguration</label>
+
+        <input-field type="text">
+            <name>notificationEmail</name>
+            <label>Notification Email Address</label>
+            <label lang="de-DE">Benachrichtigungs-E-Mail-Adresse</label>
+            <placeholder>admin@example.com</placeholder>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Spike Alerts</title>
+        <title lang="de-DE">Spike-Warnungen</title>
+
+        <input-field type="bool">
+            <name>spikeEnabled</name>
+            <label>Enable Spike Alerts</label>
+            <label lang="de-DE">Spike-Warnungen aktivieren</label>
+            <defaultValue>true</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>spikeThreshold</name>
+            <label>Error Count Threshold</label>
+            <label lang="de-DE">Fehleranzahl-Grenzwert</label>
+            <defaultValue>50</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>spikeInterval</name>
+            <label>Interval (in Minutes)</label>
+            <label lang="de-DE">Intervall (in Minuten)</label>
+            <defaultValue>15</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>spikeCooldown</name>
+            <label>Alert Cooldown (in Minutes)</label>
+            <label lang="de-DE">Sperrzeit (in Minuten)</label>
+            <defaultValue>60</defaultValue>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Daily Summary</title>
+        <title lang="de-DE">Tägliche Zusammenfassung</title>
+
+        <input-field type="bool">
+            <name>summaryEnabled</name>
+            <label>Enable Daily Summary</label>
+            <label lang="de-DE">Tägliche Zusammenfassung aktivieren</label>
+            <defaultValue>true</defaultValue>
         </input-field>
     </card>
 </config>

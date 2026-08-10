@@ -8,7 +8,8 @@ node_modules/
 .idea/
 *.log
 
-
+# Temp backup files
+*.bak
 
 # +----------------------------+
 # |    Keep .gitkeep files     |

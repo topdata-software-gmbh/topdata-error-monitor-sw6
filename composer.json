@@ -12,7 +12,8 @@
         }
     ],
     "require":     {
-        "shopware/core": "6.7.*"
+        "shopware/core": "6.7.*",
+        "topdata/topdata-foundation-sw6": "^1.3"
     },
     "extra":       {
         "shopware-plugin-class": "Topdata\\TopdataErrorMonitorSW6\\TopdataErrorMonitorSW6",
