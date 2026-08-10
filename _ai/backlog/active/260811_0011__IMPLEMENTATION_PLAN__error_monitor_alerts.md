@@ -7,7 +7,7 @@ status: draft
 priority: high
 tags: [shopware, error-monitoring, alerting, backend, scheduled-task]
 estimatedComplexity: moderate
-documentRevision: 1
+documentRevision: 2
 documentType: IMPLEMENTATION_PLAN
 ---
 
@@ -455,18 +455,19 @@ class SendDailySummaryTask extends ScheduledTask
 
 namespace Topdata\TopdataErrorMonitorSW6\ScheduledTask;
 
+use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService;
 
-#[AsMessageHandler(handles: SendDailySummaryTask::class)]
 class SendDailySummaryTaskHandler extends ScheduledTaskHandler
 {
     public function __construct(
-        $scheduledTaskRepository,
+        EntityRepository $scheduledTaskRepository,
+        LoggerInterface $exceptionLogger,
         private readonly ErrorLoggerService $errorLoggerService
     ) {
-        parent::__construct($scheduledTaskRepository);
+        parent::__construct($scheduledTaskRepository, $exceptionLogger);
     }
 
     public function run(): void
@@ -491,7 +492,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataFoundationSW6\TopdataFoundationSW6;
+use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService;
 
@@ -499,7 +500,7 @@ use Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService;
     name: 'topdata:error-monitor:test',
     description: 'Trigger simulated unhandled errors or run reports instantly for debugging verification'
 )]
-class TestErrorCommand extends TopdataFoundationSW6
+class TestErrorCommand extends AbstractTopdataCommand
 {
     public function __construct(
         private readonly ErrorLoggerService $errorLoggerService
@@ -510,15 +511,12 @@ class TestErrorCommand extends TopdataFoundationSW6
     protected function configure(): void
     {
         $this
-            ->addOption('throw', 't', InputOption::VALUE_NONE, 'Register a simulated RuntimeException inside the tracking database')
+            ->addOption('throw', 'e', InputOption::VALUE_NONE, 'Register a simulated RuntimeException inside the tracking database')
             ->addOption('send-summary', 's', InputOption::VALUE_NONE, 'Bypass interval constraints and execute the daily summary email reporting immediately');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $cliStyle = new \Symfony\Component\Console\Style\SymfonyStyle($input, $output);
-        CliLogger::setCliStyle($cliStyle);
-
         CliLogger::title('Topdata Error Monitor Test Suite');
 
         if ($input->getOption('throw')) {
@@ -544,7 +542,7 @@ class TestErrorCommand extends TopdataFoundationSW6
             return self::SUCCESS;
         }
 
-        CliLogger::warning('No parameter specified. Invoke command with --throw (-t) or --send-summary (-s).');
+        CliLogger::warning('No parameter specified. Invoke command with --throw (-e) or --send-summary (-s).');
         return self::INVALID;
     }
 }
@@ -596,6 +594,7 @@ We register our newly created services, exception subscribers, background schedu
 
         <service id="Topdata\TopdataErrorMonitorSW6\ScheduledTask\SendDailySummaryTaskHandler">
             <argument type="service" id="scheduled_task.repository"/>
+            <argument type="service" id="logger"/>
             <argument type="service" id="Topdata\TopdataErrorMonitorSW6\Service\ErrorLoggerService"/>
             <tag name="messenger.message_handler"/>
         </service>
@@ -613,6 +612,15 @@ We register our newly created services, exception subscribers, background schedu
 
 ### Phase 8: Project Housekeeping & User Documentation
 Update internal developer documentation, public setup guides, and project logs to capture these newly integrated operational behaviors.
+
+#### [MODIFY] `composer.json`
+```json
+    "require":     {
+        "shopware/core": "6.7.*",
+        "topdata/topdata-foundation-sw6": "^1.3"
+    },
+```
+The `TestErrorCommand` depends on `AbstractTopdataCommand` and `CliLogger` from the foundation; every other Topdata plugin using it declares this requirement explicitly.
 
 #### [MODIFY] `README.md`
 ```markdown
@@ -710,7 +718,7 @@ planFile: "_ai/backlog/active/260811_0011__IMPLEMENTATION_PLAN__error_monitor_al
 project: "SW6.7 Plugin"
 status: completed
 filesCreated: 6
-filesModified: 5
+filesModified: 6
 filesDeleted: 0
 tags: [report, testing, backend, logging]
 documentType: IMPLEMENTATION_REPORT
@@ -733,9 +741,10 @@ We have designed and configured a self-contained monitoring and notification sys
 ### Modified Files:
 1. `src/Resources/config/config.xml` (Enables custom parameters for mail, triggers, intervals, and threshold criteria)
 2. `src/Resources/config/services.xml` (Handles container service configuration and DI wiring)
-3. `README.md` (Updates configuration options, architectural descriptions, and diagnostic commands)
-4. `CHANGELOG.md` (Updated logs for semantic versioning tracing)
-5. `.gitignore` (Configured to ignore typical artifacts and logs)
+3. `composer.json` (Adds `topdata/topdata-foundation-sw6` dependency for the CLI command's base class and logger)
+4. `README.md` (Updates configuration options, architectural descriptions, and diagnostic commands)
+5. `CHANGELOG.md` (Updated logs for semantic versioning tracing)
+6. `.gitignore` (Configured to ignore typical artifacts and logs)
 
 ## 3. Key Technical Decisions
 - **Direct Database Logging (DBAL)**: Instead of writing data via Shopware Data Abstraction Layer (DAL) entities, we wrote database updates using standard PDO queries via `Doctrine\DBAL\Connection`. This ensures the monitoring tool behaves reliably even when the core Shopware Framework suffers severe startup crashes or DAL dependency mapping errors.
