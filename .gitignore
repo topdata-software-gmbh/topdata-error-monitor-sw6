@@ -11,6 +11,11 @@ node_modules/
 # Temp backup files
 *.bak
 
+
+_ai-pdf/
+_ai/**/*.pdf
+
+
 # +----------------------------+
 # |    Keep .gitkeep files     |
 # +----------------------------+
